@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; script-src 'self' https://docs.opencv.org; style-src 'self' 'unsafe-inline'">
+    <title>Resistor Detection</title>
+</head>
+<body>
+    <h1>Resistor Detection</h1>
+    <input type="file" id="fileInput" />
+    <canvas id="canvas"></canvas>
+
+    <!-- Якщо ти завантажуєш OpenCV локально -->
+    <!-- <script src="libs/opencv.js"></script> -->
+    
+    <!-- Якщо ти використовуєш CDN -->
+    <script src="https://docs.opencv.org/master/opencv.js"></script>
+    
+    <script src="renderer.js"></script>
+</body>
+</html>
+
