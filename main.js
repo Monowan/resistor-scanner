@@ -1,22 +1,23 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow } = require('electron');
 const path = require('path');
 
-let mainWindow;
+let win;
 
 function createWindow() {
-    mainWindow = new BrowserWindow({
+    win = new BrowserWindow({
         width: 800,
         height: 600,
         webPreferences: {
-            nodeIntegration: true,
-            contextIsolation: false,
-            enableRemoteModule: true
+            nodeIntegration: true // Вимкни preload, якщо не використовуєш його
+            // preload: path.join(__dirname, 'preload.js') // Закоментуй або видали цей рядок
         }
     });
 
-    mainWindow.loadFile('index.html');
+    win.loadFile('index.html');
 
-    mainWindow.webContents.openDevTools();  // Відкриває DevTools для перевірки консолі
+    win.on('closed', () => {
+        win = null;
+    });
 }
 
 app.whenReady().then(createWindow);

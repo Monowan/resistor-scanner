@@ -4,6 +4,8 @@
   "main": "main.js",
   "scripts": {
     "start": "electron ."
+  },
+  "dependencies": {
+    "opencv.js": "^1.2.1"
   }
 }
-
