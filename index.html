@@ -4,15 +4,27 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Resistor Scanner</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <h1>Розпізнавання Резисторів</h1>
-    
+
     <!-- Вибір файлу -->
     <input type="file" id="fileInput" accept="image/*">
     
-    <!-- Полотно для виведення результату -->
-    <canvas id="canvasOutput"></canvas>
+    <!-- Контейнер для вікна з можливістю прокручування -->
+    <div id="imageContainer">
+        <canvas id="canvasOutput"></canvas>
+    </div>
+    <div class="controls">
+  		 <button id="moveLeft">⬅️</button>
+  		 <button id="moveRight">➡️</button>
+  		 <button id="moveUp">⬆️</button>
+		 <button id="moveDown">⬇️</button>
+	     <button id="zoomOut">-</button>
+  	     <button id="zoomIn">+</button>
+         <button id="resetZoom">100%</button>
+	</div>
 
     <script src="renderer.js"></script>
 </body>

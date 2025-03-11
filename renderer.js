@@ -1,16 +1,20 @@
+let offsetX = 0;
+let offsetY = 0;
+let scale = 1; // Початковий масштаб
+let moveInterval = null;
+let zoomInterval = null; // Для зуму
+
+// Функція для завантаження OpenCV
 function loadOpenCV() {
     return new Promise((resolve, reject) => {
         if (typeof cv !== 'undefined') {
-            console.log("OpenCV завантажено!");
             resolve(cv); // OpenCV.js вже завантажено
         } else {
-            console.log("Завантаження OpenCV.js...");
             const script = document.createElement('script');
             script.src = 'https://docs.opencv.org/master/opencv.js';
             script.async = true;
             script.onload = () => {
                 if (typeof cv !== 'undefined') {
-                    console.log("OpenCV завантажено!");
                     resolve(cv); // OpenCV.js завантажено
                 } else {
                     reject(new Error('OpenCV не завантажено!'));
@@ -22,7 +26,6 @@ function loadOpenCV() {
     });
 }
 
-
 // Обробка вибору файлу з зображенням
 document.getElementById('fileInput').addEventListener('change', function(event) {
     const file = event.target.files[0];
@@ -32,92 +35,45 @@ document.getElementById('fileInput').addEventListener('change', function(event) 
             processImage(img); // Викликається після завантаження зображення
         };
         img.src = URL.createObjectURL(file); // Завантаження зображення
-        console.log("Файл вибрано:", file.name);
     } else {
         console.log("Файл не вибрано");
     }
 });
 
-
-
 function processImage(img) {
-    console.log("Обробка зображення...");
     loadOpenCV()
         .then(cv => {
-            // Завантажуємо зображення в матрицю
             const mat = cv.imread(img);
-            console.log("Зображення завантажено в матрицю");
-
-            // Перетворюємо зображення в формат RGB
             const rgbMat = new cv.Mat();
-            console.log("Перетворення в RGB...");
-            cv.cvtColor(mat, rgbMat, cv.COLOR_RGBA2RGB);  // Перетворюємо в RGB
-            console.log("Зображення перетворено в RGB");
+            cv.cvtColor(mat, rgbMat, cv.COLOR_RGBA2RGB);
 
-            // Створюємо маску для червоного кольору в RGB
-            const lowerRed = new cv.Mat(rgbMat.rows, rgbMat.cols, rgbMat.type(), [0, 0, 0, 255]); // мінімальний червоний
-            const upperRed = new cv.Mat(rgbMat.rows, rgbMat.cols, rgbMat.type(), [255, 100, 100, 255]); // максимальний червоний
-            console.log("Маска для червоних смужок створена");
-
-            // Створюємо маску для червоних смужок
             const maskRed = new cv.Mat();
-            console.log("Створюється маска для червоних смужок...");
+            const lowerRed = new cv.Mat(rgbMat.rows, rgbMat.cols, rgbMat.type(), [0, 0, 0, 255]);
+            const upperRed = new cv.Mat(rgbMat.rows, rgbMat.cols, rgbMat.type(), [255, 100, 100, 255]);
             cv.inRange(rgbMat, lowerRed, upperRed, maskRed);
-            console.log("Маска червоних смужок створена");
 
-            // Заливка маски жовтим
-            const yellowColor = [0, 255, 255, 255]; // Жовтий колір для заливки з альфа-каналом
-            const yellowScalar = new cv.Scalar(yellowColor[0], yellowColor[1], yellowColor[2], yellowColor[3]); // Жовтий для альфа-каналу
-            const yellowMat = new cv.Mat(rgbMat.rows, rgbMat.cols, rgbMat.type(), yellowColor); // Матриця для жовтого кольору
-            console.log("Заливка маски жовтим...");
-            cv.bitwise_and(yellowMat, yellowMat, yellowMat, maskRed); // Використовуємо маску для заливки тільки червоних областей жовтим
-
-            // Виводимо маску в консоль для перевірки
-            console.log("Маска червоних смужок:");
-            console.log(maskRed);
-
-            // Знаходимо контури на масці
             const contours = new cv.MatVector();
             const hierarchy = new cv.Mat();
-            console.log("Пошук контурів...");
             cv.findContours(maskRed, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
-            console.log("Кількість знайдених контурів:", contours.size());
 
-            // Обводимо знайдені контури прямокутниками на оригінальному зображенні
             const resultMat = mat.clone();
-            console.log("Обводимо знайдені контури...");
-            let largeRectanglesCount = 0;  // Лічильник великих прямокутників
             for (let i = 0; i < contours.size(); i++) {
-                // Отримуємо прямокутник, що охоплює контур
                 const rect = cv.boundingRect(contours.get(i));
-                console.log("Прямокутник:", rect);
-
-                // Перевірка на розмір прямокутника (фільтруємо дуже маленькі прямокутники)
-                if (rect.width > 20 && rect.height > 20) {  // Мінімальний розмір для прямокутників
-                    // Виводимо в консоль координати прямокутника для перевірки
-                    console.log("Великий прямокутник:", rect);
-
-                    // Малюємо великий прямокутник на результаті
-                    const color = [0, 255, 0]; // Зелений колір для обведення великих прямокутників
-                    const scalarColor = new cv.Scalar(color[0], color[1], color[2], 255); // Три елементи для RGB, 255 для альфа-каналу
-                    cv.rectangle(resultMat, new cv.Point(rect.x, rect.y), new cv.Point(rect.x + rect.width, rect.y + rect.height), scalarColor, 2); // Малюємо прямокутник на зображенні
-                    largeRectanglesCount++;
-                } else {
-                    console.log("Маленький прямокутник, замальовуємо синім:", rect);
-                    // Малюємо маленький прямокутник синім кольором
-                    const blueColor = [255, 0, 0, 255]; // Синій колір для замальовування маленьких прямокутників
-                    const blueScalar = new cv.Scalar(blueColor[0], blueColor[1], blueColor[2], blueColor[3]); // Синій для альфа-каналу
-                    cv.rectangle(resultMat, new cv.Point(rect.x, rect.y), new cv.Point(rect.x + rect.width, rect.y + rect.height), blueScalar, -1); // Малюємо замальований прямокутник
+                if (rect.width > 20 && rect.height > 20) {
+                    const color = new cv.Scalar(0, 255, 0, 255);
+                    cv.rectangle(resultMat, new cv.Point(rect.x, rect.y), new cv.Point(rect.x + rect.width, rect.y + rect.height), color, 2);
                 }
             }
 
-            console.log("Кількість великих прямокутників знайдено:", largeRectanglesCount);
+            const container = document.getElementById('imageContainer');
+            container.innerHTML = ''; // Прибираємо старе зображення
+            const canvas = document.createElement('canvas');
+            canvas.id = "canvasOutput";
+            container.appendChild(canvas);
+            cv.imshow(canvas, resultMat);
 
-            // Виводимо результат на canvas
-            console.log("Виведення результату на canvas...");
-            cv.imshow('canvasOutput', resultMat);
+            fitImageToContainer(canvas, container);
 
-            // Звільняємо пам'ять
             mat.delete();
             rgbMat.delete();
             lowerRed.delete();
@@ -125,12 +81,93 @@ function processImage(img) {
             maskRed.delete();
             contours.delete();
             hierarchy.delete();
-            yellowMat.delete();  // Очищаємо жовту матрицю
+            resultMat.delete();
 
-            console.log("Зображення оброблене!");
         })
         .catch(error => {
             console.error(error.message);
         });
 }
 
+// Підгонка під контейнер
+function fitImageToContainer(canvas, container) {
+    const containerWidth = container.clientWidth;
+    const containerHeight = container.clientHeight;
+    const scale = Math.min(containerWidth / canvas.width, containerHeight / canvas.height);
+    
+    canvas.style.width = `${canvas.width * scale}px`;
+    canvas.style.height = `${canvas.height * scale}px`;
+}
+
+// Функція для масштабування зображення
+function scaleImage(factor) {
+    scale *= factor; // Зміна масштабу
+
+    const canvas = document.getElementById("canvasOutput");
+    canvas.style.transform = `scale(${scale})`; // Масштабування зображення
+
+    // Оновлюємо масштаб зображення
+    const container = document.getElementById('imageContainer');
+    fitImageToContainer(canvas, container);
+}
+
+// Функція для початку і зупинки безперервного переміщення
+function startMoving(dx, dy) {
+    moveInterval = setInterval(() => moveImage(dx, dy), 50); // переміщує кожні 50 мс
+}
+
+function stopMoving() {
+    clearInterval(moveInterval); // зупиняє переміщення
+}
+
+// Функція для переміщення зображення
+function moveImage(dx, dy) {
+    offsetX += dx;
+    offsetY += dy;
+
+    updateImageTransform();
+}
+
+function updateImageTransform() {
+    const canvas = document.getElementById("canvasOutput");
+    canvas.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`; // Масштаб зображення
+}
+
+// Обробка кнопок для переміщення та масштабу
+document.getElementById("moveLeft").addEventListener("mousedown", () => startMoving(10, 0));
+document.getElementById("moveLeft").addEventListener("mouseup", stopMoving);
+document.getElementById("moveLeft").addEventListener("mouseout", stopMoving);
+
+document.getElementById("moveRight").addEventListener("mousedown", () => startMoving(-10, 0));
+document.getElementById("moveRight").addEventListener("mouseup", stopMoving);
+document.getElementById("moveRight").addEventListener("mouseout", stopMoving);
+
+document.getElementById("moveUp").addEventListener("mousedown", () => startMoving(0, 10));
+document.getElementById("moveUp").addEventListener("mouseup", stopMoving);
+document.getElementById("moveUp").addEventListener("mouseout", stopMoving);
+
+document.getElementById("moveDown").addEventListener("mousedown", () => startMoving(0, -10));
+document.getElementById("moveDown").addEventListener("mouseup", stopMoving);
+document.getElementById("moveDown").addEventListener("mouseout", stopMoving);
+
+document.getElementById("resetZoom").addEventListener("click", () => {
+    scale = 1;
+    offsetX = 0;
+    offsetY = 0;
+    updateImageTransform();
+});
+
+// Обробка кнопок масштабування
+document.getElementById("zoomIn").addEventListener("mousedown", () => {
+    zoomInterval = setInterval(() => scaleImage(1.1), 50); // Збільшення на 10% кожні 50 мс
+});
+
+document.getElementById("zoomIn").addEventListener("mouseup", () => clearInterval(zoomInterval));
+document.getElementById("zoomIn").addEventListener("mouseout", () => clearInterval(zoomInterval));
+
+document.getElementById("zoomOut").addEventListener("mousedown", () => {
+    zoomInterval = setInterval(() => scaleImage(0.9), 50); // Зменшення на 10% кожні 50 мс
+});
+
+document.getElementById("zoomOut").addEventListener("mouseup", () => clearInterval(zoomInterval));
+document.getElementById("zoomOut").addEventListener("mouseout", () => clearInterval(zoomInterval));

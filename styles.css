@@ -1,0 +1,48 @@
+html, body {
+    margin: 0;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: #eee;
+    overflow: hidden;
+}
+
+#fileInput {
+    margin: 10px;
+}
+
+#imageContainer {
+    flex-grow: 1;
+    width: 90vw;
+    max-height: 80vh;
+    overflow: hidden; /* Прибираємо прокручування */
+    border: 2px solid #ccc;
+    background-color: #fff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
+
+
+canvas {
+    display: block; /* Вимикаємо будь-які зайві відступи */
+}
+
+.controls {
+    text-align: center;
+    margin-top: 10px;
+}
+
+button {
+    font-size: 20px;
+    margin: 5px;
+    padding: 10px 20px;
+    cursor: pointer;
+}
+
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
